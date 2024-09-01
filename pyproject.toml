@@ -1,0 +1,73 @@
+[project]
+name = "xlcalculator"
+version = "0.5.1.dev0"
+description = "Converts MS Excel formulas to Python and evaluates them."
+authors = [
+    {name = "Bradley van Ree", email = "brads@bradbase.net"},
+]
+dependencies = [
+    "jsonpickle",
+    "mock",
+    "numpy",
+    "numpy-financial",
+    "openpyxl",
+    "pandas",
+    "scipy",
+    "yearfrac>=0.4.8",
+]
+requires-python = "<3.13,>=3.9"
+readme = "README.md"
+license = {text = "MIT"}
+keywords = ["xls", "Excel", "spreadsheet", "workbook", "data analysis", "analysisreading excel", "excel formula", "excel formulas", "excel equations", "excel equation", "formula", "formulas", "equation", "equations", "timeseries", "time series", "research", "scenario analysis", "scenario", "modelling", "model", "unit testing", "testing", "audit", "calculation", "evaluation", "data science", "openpyxl"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Financial and Insurance Industry",
+    "Intended Audience :: Information Technology",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Natural Language :: English",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.9",
+    "Topic :: Office/Business :: Financial :: Spreadsheet",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+    "Topic :: Scientific/Engineering :: Mathematics",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Software Development :: Testing",
+    "Topic :: Software Development :: Testing :: Unit",
+    "Topic :: Utilities",
+]
+
+
+[project.urls]
+Homepage = "https://github.com/bradbase/xlcalculator"
+
+[project.optional-dependencies]
+test = [
+    "coverage",
+    "flake8",
+    "mock",
+    "pytest",
+    "pytest-cov",
+]
+build = [
+    "pip-tools",
+]
+[tool.pdm]
+distribution = false
+
+[tool.pdm.dev-dependencies]
+dev = [
+    "setuptools>=74.0.0",
+    "ipython>=8.27.0",
+    "pytest>=8.3.2",
+]
+
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"

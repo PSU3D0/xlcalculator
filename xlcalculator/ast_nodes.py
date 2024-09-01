@@ -141,7 +141,15 @@ class RangeNode(OperandNode):
     def full_address(self, context):
         addr = self.address
         if '!' not in addr:
-            addr = f'{context.sheet}!{addr}'
+            if isinstance(addr, list):
+                addr_first = str(addr[0][0]).split('!', 1)
+                addr_last = str(addr[-1][-1]).split('!', 1)
+                if ' ' in addr_first[0]:
+                    addr = f"'{addr_first[0]}'!{addr_first[1]}:{addr_last[1]}" 
+                else:
+                    addr = f"{addr_first[0]}!{addr_first[1]}:{addr_last[1]}" 
+            else:
+                addr = f'{context.sheet}!{addr}'
         return addr
 
     def eval(self, context):

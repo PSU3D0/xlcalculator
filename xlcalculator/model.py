@@ -7,6 +7,17 @@ from dataclasses import dataclass, field
 
 from . import xltypes, reader, parser, tokenizer
 
+logger = logging.getLogger(__name__)
+
+
+def dequote_cell_addr(cell_addr: str):
+    if "!" in cell_addr:
+        sheet, cell = cell_addr.split("!")
+        sheet = sheet.replace("'", "")
+        return f"{sheet}!{cell}"
+    else:
+        return cell_addr
+
 
 @dataclass
 class Model():
@@ -16,6 +27,8 @@ class Model():
     formulae: dict = field(
         init=False, default_factory=dict, compare=True, hash=True, repr=True)
     ranges: dict = field(
+        init=False, default_factory=dict, compare=True, hash=True, repr=True)
+    named_ranges: dict[str, str] = field(
         init=False, default_factory=dict, compare=True, hash=True, repr=True)
     defined_names: dict = field(
         init=False, default_factory=dict, compare=True, hash=True, repr=True)
@@ -54,7 +67,7 @@ class Model():
             if address in self.cells:
                 return self.cells[address].value
             else:
-                logging.debug(
+                logger.debug(
                     "Trying to get value for cell {address} but that cell "
                     "doesn't exist.")
                 return 0
@@ -63,7 +76,7 @@ class Model():
             if address.address in self.cells:
                 return self.cells[address.address].value
             else:
-                logging.debug(
+                logger.debug(
                     "Trying to get value for cell {address.address} but "
                     "that cell doesn't exist")
                 return 0
@@ -158,6 +171,7 @@ class ModelCompiler:
     and create a model represented by a network graph that can be serialized
     to disk, and executed independently of Excel.
     """
+    archive: reader.Reader
 
     def __init__(self):
         self.model = Model()
@@ -167,11 +181,13 @@ class ModelCompiler:
         archive.read()
         return archive
 
-    def parse_archive(self, archive, ignore_sheets=[], ignore_hidden=False):
+    def parse_archive(self, archive: reader.Reader, ignore_sheets=[], ignore_hidden=False):
         self.model.cells, self.model.formulae, self.model.ranges = \
             archive.read_cells(ignore_sheets, ignore_hidden)
+
         self.defined_names = archive.read_defined_names(
             ignore_sheets, ignore_hidden)
+
         self.build_defined_names()
         self.link_cells_to_defined_names()
         self.build_ranges()
@@ -224,14 +240,13 @@ class ModelCompiler:
 
     def build_defined_names(self):
         """Add defined ranges to model."""
-        for name in self.defined_names:
-            cell_address = self.defined_names[name]
+        for name, cell_address in self.defined_names.items():
             cell_address = cell_address.replace('$', '')
 
             # a cell has an address like; Sheet1!A1
             if ':' not in cell_address:
                 if cell_address not in self.model.cells:
-                    logging.warning(
+                    logger.warning(
                         f"Defined name {name} refers to empty cell "
                         f"{cell_address}. Is not being loaded.")
                     continue
@@ -255,9 +270,7 @@ class ModelCompiler:
                     self.model.cells[cell_address].formula
 
     def link_cells_to_defined_names(self):
-        for name in self.model.defined_names:
-            defn = self.model.defined_names[name]
-
+        for name, defn in self.model.defined_names.items():
             if isinstance(defn, xltypes.XLCell):
                 self.model.cells[defn.address].defined_names.append(name)
 
@@ -265,19 +278,21 @@ class ModelCompiler:
                 if any(isinstance(el, list) for el in defn.cells):
                     for column in defn.cells:
                         for row_address in column:
-                            self.model.cells[row_address].defined_names.append(
-                                name)
+                            try:
+                                self.model.cells[row_address].defined_names.append(name)
+                            except KeyError:
+                                pass
                 else:
                     # programmer error
                     message = "This isn't a dim2 array. {}".format(name)
-                    logging.error(message)
+                    logger.error(message)
                     raise Exception(message)
             else:
                 message = (
                     f"Trying to link cells for {name}, but got unkown "
                     f"type {type(defn)}"
                 )
-                logging.error(message)
+                logger.error(message)
                 raise ValueError(message)
 
     def build_ranges(self, default_sheet=None):
